@@ -66,6 +66,7 @@ dependencies {
     implementation(libs.firebase.analytics)
     implementation(libs.hilt)
     ksp(libs.hilt.compiler)
+    implementation(libs.play.services.ads)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

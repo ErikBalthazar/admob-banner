@@ -13,6 +13,7 @@ firebaseBom = "33.13.0"
 firebaseCrashlyticsPlugin = "3.0.3"
 hilt = "2.56.2"
 ksp = "2.0.21-1.0.27"
+playServiceAds = "24.2.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -33,6 +34,7 @@ firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.r
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
 hilt = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
+play-services-ads = { group = "com.google.android.gms", name = "play-services-ads", version.ref = "playServiceAds" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
