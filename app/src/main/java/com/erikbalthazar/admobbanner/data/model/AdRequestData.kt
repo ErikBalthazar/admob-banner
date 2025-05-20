@@ -1,4 +1,4 @@
-package com.erikbalthazar.admobbanner.data
+package com.erikbalthazar.admobbanner.data.model
 
 /**
  * Data class representing the parameters for an ad request.

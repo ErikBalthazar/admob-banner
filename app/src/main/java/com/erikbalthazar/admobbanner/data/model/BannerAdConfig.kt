@@ -1,4 +1,4 @@
-package com.erikbalthazar.admobbanner.data
+package com.erikbalthazar.admobbanner.data.model
 
 import com.google.android.gms.ads.AdSize
 

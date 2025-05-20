@@ -20,7 +20,7 @@ import com.erikbalthazar.admobbanner.R
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.erikbalthazar.admobbanner.data.BannerAdConfig
+import com.erikbalthazar.admobbanner.data.model.BannerAdConfig
 import com.erikbalthazar.admobbanner.ui.theme.AdErrorBackground
 import com.erikbalthazar.admobbanner.ui.theme.Dimens
 import com.erikbalthazar.admobbanner.ui.theme.AdPlaceholderBackground

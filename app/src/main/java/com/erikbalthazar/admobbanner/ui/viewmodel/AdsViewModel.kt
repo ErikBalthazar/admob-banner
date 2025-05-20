@@ -2,7 +2,8 @@ package com.erikbalthazar.admobbanner.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.erikbalthazar.admobbanner.data.AdRequestData
+import com.erikbalthazar.admobbanner.data.model.AdRequestData
+import com.erikbalthazar.admobbanner.data.source.ads.AdRequestFactory
 import com.erikbalthazar.admobbanner.utils.Status
 import com.google.android.gms.ads.AdRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,7 +19,9 @@ import javax.inject.Inject
  * that can be used to load ads in the UI.
  */
 @HiltViewModel
-class AdsViewModel @Inject constructor() : ViewModel() {
+class AdsViewModel @Inject constructor(
+    private val adRequestFactory: AdRequestFactory
+) : ViewModel() {
 
     private val _adRequestState = MutableStateFlow<Status<AdRequest?>>(Status.Loading)
     val adRequestState: StateFlow<Status<AdRequest?>> = _adRequestState
@@ -27,23 +30,11 @@ class AdsViewModel @Inject constructor() : ViewModel() {
         _adRequestState.value = Status.Loading
         viewModelScope.launch {
             try {
-                val request = createAdRequest(adRequestData)
+                val request = adRequestFactory.create(adRequestData)
                 _adRequestState.value = Status.Success(request)
             } catch (e: Exception) {
                 _adRequestState.value = Status.Error(e)
             }
         }
-    }
-
-    private fun createAdRequest(adRequestData: AdRequestData?): AdRequest {
-        val builder = AdRequest.Builder()
-
-        adRequestData?.let {
-            it.keywords?.forEach { keyword ->
-                builder.addKeyword(keyword)
-            }
-        }
-
-        return builder.build()
     }
 }
