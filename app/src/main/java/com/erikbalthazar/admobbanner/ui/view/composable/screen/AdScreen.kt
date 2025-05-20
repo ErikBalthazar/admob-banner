@@ -1,5 +1,6 @@
 package com.erikbalthazar.admobbanner.ui.view.composable.screen
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -18,19 +19,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.erikbalthazar.admobbanner.R
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.erikbalthazar.admobbanner.data.model.BannerAdConfig
+import com.erikbalthazar.admobbanner.data.source.ads.CustomAdListener
 import com.erikbalthazar.admobbanner.ui.theme.AdErrorBackground
 import com.erikbalthazar.admobbanner.ui.theme.Dimens
 import com.erikbalthazar.admobbanner.ui.theme.AdPlaceholderBackground
 import com.erikbalthazar.admobbanner.ui.theme.AdPlaceholderBorder
 import com.erikbalthazar.admobbanner.ui.view.composable.component.BannerAdView
 import com.erikbalthazar.admobbanner.ui.viewmodel.AdsViewModel
+import com.erikbalthazar.admobbanner.utils.AdEvent
 import com.erikbalthazar.admobbanner.utils.Status
 import com.erikbalthazar.admobbanner.utils.getHeightInDp
+import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun AdScreen(
@@ -39,8 +43,50 @@ fun AdScreen(
 ) {
     val adRequestState by viewModel.adRequestState.collectAsState()
 
+    val loadedMsg = stringResource(R.string.adscreen_banner_adevent_loaded_message)
+    val failedMsg = stringResource(R.string.adscreen_banner_adevent_failed_message)
+    val openedMsg = stringResource(R.string.adscreen_banner_adevent_opened_message)
+    val clickedMsg = stringResource(R.string.adscreen_banner_adevent_clicked_message)
+    val closedMsg = stringResource(R.string.adscreen_banner_adevent_closed_message)
+    val impressionMsg = stringResource(R.string.adscreen_banner_adevent_impression_message)
+    val swipeMsg = stringResource(R.string.adscreen_banner_adevent_swipe_clicked_message)
+
     LaunchedEffect(Unit) {
         viewModel.loadBannerAd(null)
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.adEvents.collectLatest { adEvent ->
+            when (adEvent) {
+                AdEvent.Loaded -> Log.d(
+                    "AdEvent", loadedMsg
+                )
+
+                is AdEvent.FailedToLoad -> Log.e(
+                    "AdEvent", "$failedMsg ${adEvent.loadAdError.message}"
+                )
+
+                AdEvent.Opened -> Log.d(
+                    "AdEvent", openedMsg
+                )
+
+                AdEvent.Clicked -> Log.d(
+                    "AdEvent", clickedMsg
+                )
+
+                AdEvent.Closed -> Log.d(
+                    "AdEvent", closedMsg
+                )
+
+                AdEvent.Impression -> Log.d(
+                    "AdEvent", impressionMsg
+                )
+
+                AdEvent.SwipeGestureClicked -> Log.d(
+                    "AdEvent", swipeMsg
+                )
+            }
+        }
     }
 
     Column(
@@ -49,12 +95,18 @@ fun AdScreen(
             .padding(Dimens.PaddingMedium),
         verticalArrangement = Arrangement.Bottom
     ) {
-        Banner(adRequestState)
+        Banner(
+            adRequestState = adRequestState,
+            adListener = CustomAdListener(viewModel)
+        )
     }
 }
 
 @Composable
-fun Banner(adRequestState: Status<AdRequest?>) {
+fun Banner(
+    adRequestState: Status<AdRequest?>,
+    adListener: AdListener
+) {
     val bannerAdConfig = BannerAdConfig(
         adUnitId = stringResource(R.string.admob_adunitid)
     )
@@ -71,7 +123,8 @@ fun Banner(adRequestState: Status<AdRequest?>) {
             is Status.Success -> {
                 BannerAdView(
                     adRequest = adRequestState.data,
-                    bannerAdConfig = bannerAdConfig
+                    bannerAdConfig = bannerAdConfig,
+                    adListener = adListener
                 )
             }
             is Status.Error -> {
@@ -111,23 +164,3 @@ fun AdError(adSize: AdSize) {
         Text(text = stringResource(R.string.adscreen_banner_error_message))
     }
 }
-
-@Preview(showBackground = true)
-@Composable
-fun BannerLoadingPreview() {
-    Banner(adRequestState = Status.Loading)
-}
-
-@Preview(showBackground = true)
-@Composable
-fun BannerSuccessPreview() {
-    val fakeAdRequest = AdRequest.Builder().build()
-    Banner(adRequestState = Status.Success(fakeAdRequest))
-}
-
-@Preview(showBackground = true)
-@Composable
-fun BannerErrorPreview() {
-    Banner(adRequestState = Status.Error(Exception()))
-}
-

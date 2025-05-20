@@ -4,10 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.erikbalthazar.admobbanner.data.model.AdRequestData
 import com.erikbalthazar.admobbanner.data.source.ads.AdRequestFactory
+import com.erikbalthazar.admobbanner.utils.AdEvent
 import com.erikbalthazar.admobbanner.utils.Status
 import com.google.android.gms.ads.AdRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -26,6 +29,9 @@ class AdsViewModel @Inject constructor(
     private val _adRequestState = MutableStateFlow<Status<AdRequest?>>(Status.Loading)
     val adRequestState: StateFlow<Status<AdRequest?>> = _adRequestState
 
+    private val _adEvents = MutableSharedFlow<AdEvent>(replay = 0)
+    val adEvents: SharedFlow<AdEvent> = _adEvents
+
     fun loadBannerAd(adRequestData: AdRequestData?) {
         _adRequestState.value = Status.Loading
         viewModelScope.launch {
@@ -35,6 +41,12 @@ class AdsViewModel @Inject constructor(
             } catch (e: Exception) {
                 _adRequestState.value = Status.Error(e)
             }
+        }
+    }
+
+    fun onAdEvent(event: AdEvent) {
+        viewModelScope.launch {
+            _adEvents.emit(event)
         }
     }
 }

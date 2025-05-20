@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import com.erikbalthazar.admobbanner.data.model.BannerAdConfig
+import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdView
 
@@ -18,7 +19,8 @@ import com.google.android.gms.ads.AdView
 @Composable
 fun BannerAdView(
     adRequest: AdRequest?,
-    bannerAdConfig: BannerAdConfig
+    bannerAdConfig: BannerAdConfig,
+    adListener: AdListener
 ) {
     if (adRequest == null) return
 
@@ -29,6 +31,7 @@ fun BannerAdView(
             AdView(context).apply {
                 adUnitId = bannerAdConfig.adUnitId
                 setAdSize(bannerAdConfig.adSize)
+                setAdListener(adListener)
                 loadAd(adRequest)
             }
         },
