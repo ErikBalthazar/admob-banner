@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">AdmobBanner</string>
+    <string name="admob_adunitid">ca-app-pub-3940256099942544/6300978111</string>
+
+    <!-- AdScreen -->
+    <string name="adscreen_banner_loading_message">Carregando anúncio</string>
+    <string name="adscreen_banner_error_message">Erro ao carregar anúncio</string>
 </resources>
