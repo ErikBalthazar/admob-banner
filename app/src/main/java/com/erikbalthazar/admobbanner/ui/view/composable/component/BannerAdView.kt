@@ -20,7 +20,8 @@ import com.google.android.gms.ads.AdView
 fun BannerAdView(
     adRequest: AdRequest?,
     bannerAdConfig: BannerAdConfig,
-    adListener: AdListener
+    adListener: AdListener,
+    onRelease: () -> Unit = {}
 ) {
     if (adRequest == null) return
 
@@ -40,6 +41,7 @@ fun BannerAdView(
         },
         onRelease = { adView ->
             adView.destroy()
+            onRelease()
         }
     )
 }

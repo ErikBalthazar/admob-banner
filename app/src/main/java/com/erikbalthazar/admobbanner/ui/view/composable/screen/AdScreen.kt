@@ -1,5 +1,6 @@
 package com.erikbalthazar.admobbanner.ui.view.composable.screen
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,10 +19,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import com.erikbalthazar.admobbanner.R
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.erikbalthazar.admobbanner.common.analytics.AdAnalytics
+import com.erikbalthazar.admobbanner.common.analytics.AnalyticsTags
 import com.erikbalthazar.admobbanner.common.exception.NetworkException
 import com.erikbalthazar.admobbanner.data.model.BannerAdConfig
 import com.erikbalthazar.admobbanner.data.source.ads.CustomAdListener
@@ -39,6 +43,8 @@ import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import kotlinx.coroutines.flow.collectLatest
+import com.erikbalthazar.admobbanner.BuildConfig
+import com.erikbalthazar.admobbanner.common.crashlytics.AdCrashlytics
 
 @Composable
 fun AdScreen(
@@ -47,6 +53,8 @@ fun AdScreen(
 ) {
     val adRequestState by viewModel.adRequestState.collectAsState()
 
+    val context = LocalContext.current
+    val adUnitId = BuildConfig.ADMOB_BANNER_AD_UNIT_ID
     val loadedMsg = stringResource(R.string.adscreen_banner_adevent_loaded_message)
     val failedMsg = stringResource(R.string.adscreen_banner_adevent_failed_message)
     val openedMsg = stringResource(R.string.adscreen_banner_adevent_opened_message)
@@ -56,7 +64,7 @@ fun AdScreen(
     val swipeMsg = stringResource(R.string.adscreen_banner_adevent_swipe_clicked_message)
 
     val bannerAdConfig = BannerAdConfig(
-        adUnitId = stringResource(R.string.admob_adunitid),
+        adUnitId = adUnitId,
         adSize = AdSize.BANNER
     )
 
@@ -67,40 +75,65 @@ fun AdScreen(
     LaunchedEffect(Unit) {
         viewModel.adEvents.collectLatest { adEvent ->
             when (adEvent) {
-                AdEvent.Loaded -> Log.d(
-                    "AdEvent", loadedMsg
-                )
+                AdEvent.Loaded -> {
+                    logAdEvent(
+                        context = context,
+                        eventTag = AnalyticsTags.AD_EVENT,
+                        message = loadedMsg
+                    )
+                }
 
                 is AdEvent.FailedToLoad -> {
                     viewModel.handleAdError(
                         error = adEvent.loadAdError,
                         adRequestData = null
                     )
-                    Log.e(
-                        "AdEvent",
-                        "$failedMsg ${adEvent.loadAdError.message} - ${adEvent.loadAdError.code}"
+                    logAdEventCrash(
+                        eventTag = AnalyticsTags.AD_EVENT,
+                        logMessage = "$failedMsg ${adEvent.loadAdError.message}",
+                        crashlyticsMessage = adEvent.loadAdError.message
                     )
                 }
 
-                AdEvent.Opened -> Log.d(
-                    "AdEvent", openedMsg
-                )
+                AdEvent.Opened -> {
+                    logAdEvent(
+                        context = context,
+                        eventTag = AnalyticsTags.AD_EVENT,
+                        message = openedMsg
+                    )
+                }
 
-                AdEvent.Clicked -> Log.d(
-                    "AdEvent", clickedMsg
-                )
+                AdEvent.Clicked -> {
+                    logAdEvent(
+                        context = context,
+                        eventTag = AnalyticsTags.AD_EVENT,
+                        message = clickedMsg
+                    )
+                }
 
-                AdEvent.Closed -> Log.d(
-                    "AdEvent", closedMsg
-                )
+                AdEvent.Closed -> {
+                    logAdEvent(
+                        context = context,
+                        eventTag = AnalyticsTags.AD_EVENT,
+                        message = closedMsg
+                    )
+                }
 
-                AdEvent.Impression -> Log.d(
-                    "AdEvent", impressionMsg
-                )
+                AdEvent.Impression -> {
+                    logAdEvent(
+                        context = context,
+                        eventTag = AnalyticsTags.AD_EVENT,
+                        message = impressionMsg
+                    )
+                }
 
-                AdEvent.SwipeGestureClicked -> Log.d(
-                    "AdEvent", swipeMsg
-                )
+                AdEvent.SwipeGestureClicked -> {
+                    logAdEvent(
+                        context = context,
+                        eventTag = AnalyticsTags.AD_EVENT,
+                        message = swipeMsg
+                    )
+                }
             }
         }
     }
@@ -136,7 +169,10 @@ fun AdScreen(
             Banner(
                 bannerAdConfig = bannerAdConfig,
                 adRequestState = adRequestState,
-                adListener = CustomAdListener(viewModel)
+                adListener = CustomAdListener(viewModel),
+                onAdViewRelease = {
+                    viewModel.cancelNetworkCallback()
+                }
             )
         }
     }
@@ -160,7 +196,8 @@ fun InstructionsText() {
 fun Banner(
     bannerAdConfig: BannerAdConfig,
     adRequestState: Status<AdRequest?>,
-    adListener: AdListener
+    adListener: AdListener,
+    onAdViewRelease: () -> Unit = {},
 ) {
     Box(
         modifier = Modifier
@@ -175,7 +212,8 @@ fun Banner(
                 BannerAdView(
                     adRequest = adRequestState.data,
                     bannerAdConfig = bannerAdConfig,
-                    adListener = adListener
+                    adListener = adListener,
+                    onRelease = onAdViewRelease
                 )
             }
             is Status.Error -> {
@@ -226,4 +264,22 @@ fun AdError(
     ) {
         Text(text = errorMessage)
     }
+}
+
+fun logAdEvent(
+    context: Context,
+    eventTag: String,
+    message: String
+) {
+    Log.d(eventTag, message)
+    AdAnalytics.logEvent(context = context, eventTag = eventTag, data = message)
+}
+
+fun logAdEventCrash(
+    eventTag: String,
+    logMessage: String,
+    crashlyticsMessage: String
+) {
+    Log.e(eventTag, logMessage)
+    AdCrashlytics.log(message = crashlyticsMessage)
 }

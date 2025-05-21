@@ -17,6 +17,7 @@ ksp = "2.0.21-1.0.27"
 playServiceAds = "24.2.0"
 mockk = "1.13.9"
 kotlinxCoroutinesTest = "1.7.3"
+firebaseCrashlyticsKtx = "19.4.3"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -41,6 +42,7 @@ hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-com
 play-services-ads = { group = "com.google.android.gms", name = "play-services-ads", version.ref = "playServiceAds" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesTest" }
+firebase-crashlytics-ktx = { group = "com.google.firebase", name = "firebase-crashlytics-ktx", version.ref = "firebaseCrashlyticsKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

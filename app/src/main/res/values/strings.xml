@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">AdmobBanner</string>
-    <string name="admob_adunitid">ca-app-pub-3940256099942544/6300978111</string>
 
     <!-- AdScreen -->
     <string name="adscreen_instructions_message">Banner de anúncio será carregado no bottom da tela</string>
