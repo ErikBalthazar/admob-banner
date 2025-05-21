@@ -1,7 +1,6 @@
 package com.erikbalthazar.admobbanner.ui.view.composable.screen
 
 import android.content.Context
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -47,6 +47,8 @@ import com.erikbalthazar.admobbanner.BuildConfig
 import com.erikbalthazar.admobbanner.common.crashlytics.AdCrashlytics
 import com.erikbalthazar.admobbanner.data.model.AdEventType
 import com.erikbalthazar.admobbanner.common.Logger
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 
 @Composable
 fun AdScreen(
@@ -62,6 +64,8 @@ fun AdScreen(
     )
     val eventMessages = rememberEventMessages()
 
+    val currentAdEventType = remember { mutableStateOf<AdEventType?>(null) }
+
     LaunchedEffect(Unit) {
         viewModel.loadBannerAd(null)
     }
@@ -69,12 +73,13 @@ fun AdScreen(
     CollectAdEvents(
         viewModel = viewModel,
         context = context,
-        eventMessages = eventMessages
+        eventMessages = eventMessages,
+        currentAdEventType = currentAdEventType
     )
 
     DisposableEffect(LocalLifecycleOwner.current) {
         onDispose {
-            viewModel.cancelNetworkCallback()
+            handleAdViewRelease(viewModel)
         }
     }
 
@@ -83,8 +88,12 @@ fun AdScreen(
         bannerAdConfig = bannerAdConfig,
         adRequestState = adRequestState,
         adListener = CustomAdListener(viewModel),
-        onAdViewRelease = { viewModel.cancelNetworkCallback() }
+        currentAdEventType = currentAdEventType.value
     )
+}
+
+private fun handleAdViewRelease(viewModel: AdsViewModel) {
+    viewModel.cancelNetworkCallback()
 }
 
 @Composable
@@ -104,12 +113,16 @@ private fun rememberEventMessages(): Map<AdEventType, String> {
 private fun CollectAdEvents(
     viewModel: AdsViewModel,
     context: Context,
-    eventMessages: Map<AdEventType, String>
+    eventMessages: Map<AdEventType, String>,
+    currentAdEventType: MutableState<AdEventType?>
 ) {
     LaunchedEffect(Unit) {
         viewModel.adEvents.collectLatest { adEvent ->
+            currentAdEventType.value = adEvent.type
             when (adEvent) {
-                AdEvent.Loaded -> logAdEvent(context, AnalyticsTags.AD_EVENT, eventMessages[adEvent.type].orEmpty())
+                AdEvent.Loaded -> {
+                    logAdEvent(context, AnalyticsTags.AD_EVENT, eventMessages[adEvent.type].orEmpty())
+                }
                 is AdEvent.FailedToLoad -> {
                     viewModel.handleAdError(adEvent.loadAdError, null)
                     logAdEventCrash(
@@ -118,11 +131,21 @@ private fun CollectAdEvents(
                         crashlyticsMessage = adEvent.loadAdError.message
                     )
                 }
-                AdEvent.Opened -> logAdEvent(context, AnalyticsTags.AD_EVENT, eventMessages[adEvent.type].orEmpty())
-                AdEvent.Clicked -> logAdEvent(context, AnalyticsTags.AD_EVENT, eventMessages[adEvent.type].orEmpty())
-                AdEvent.Closed -> logAdEvent(context, AnalyticsTags.AD_EVENT, eventMessages[adEvent.type].orEmpty())
-                AdEvent.Impression -> logAdEvent(context, AnalyticsTags.AD_EVENT, eventMessages[adEvent.type].orEmpty())
-                AdEvent.SwipeGestureClicked -> logAdEvent(context, AnalyticsTags.AD_EVENT, eventMessages[adEvent.type].orEmpty())
+                AdEvent.Opened -> {
+                    logAdEvent(context, AnalyticsTags.AD_EVENT, eventMessages[adEvent.type].orEmpty())
+                }
+                AdEvent.Clicked -> {
+                    logAdEvent(context, AnalyticsTags.AD_EVENT, eventMessages[adEvent.type].orEmpty())
+                }
+                AdEvent.Closed -> {
+                    logAdEvent(context, AnalyticsTags.AD_EVENT, eventMessages[adEvent.type].orEmpty())
+                }
+                AdEvent.Impression -> {
+                    logAdEvent(context, AnalyticsTags.AD_EVENT, eventMessages[adEvent.type].orEmpty())
+                }
+                AdEvent.SwipeGestureClicked -> {
+                    logAdEvent(context, AnalyticsTags.AD_EVENT, eventMessages[adEvent.type].orEmpty())
+                }
             }
         }
     }
@@ -134,7 +157,7 @@ private fun AdScreenContent(
     bannerAdConfig: BannerAdConfig,
     adRequestState: Status<AdRequest?>,
     adListener: AdListener,
-    onAdViewRelease: () -> Unit
+    currentAdEventType: AdEventType?
 ) {
     Column(
         modifier = modifier
@@ -162,7 +185,7 @@ private fun AdScreenContent(
                 bannerAdConfig = bannerAdConfig,
                 adRequestState = adRequestState,
                 adListener = adListener,
-                onAdViewRelease = onAdViewRelease
+                currentAdEventType = currentAdEventType
             )
         }
     }
@@ -187,7 +210,7 @@ private fun Banner(
     bannerAdConfig: BannerAdConfig,
     adRequestState: Status<AdRequest?>,
     adListener: AdListener,
-    onAdViewRelease: () -> Unit = {},
+    currentAdEventType: AdEventType?
 ) {
     Box(
         modifier = Modifier
@@ -202,9 +225,11 @@ private fun Banner(
                 BannerAdView(
                     adRequest = adRequestState.data,
                     bannerAdConfig = bannerAdConfig,
-                    adListener = adListener,
-                    onRelease = onAdViewRelease
+                    adListener = adListener
                 )
+                if (currentAdEventType == null) {
+                    AdPlaceholder(adSize = bannerAdConfig.adSize)
+                }
             }
             is Status.Error -> {
                 var errorMessage = stringResource(R.string.adscreen_banner_unknown_error_message)
