@@ -125,7 +125,9 @@ fun AdScreen(
                     width = Dimens.BorderWidth,
                     color = BoxBorder
                 )
-        )
+        ) {
+            InstructionsText()
+        }
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -137,6 +139,20 @@ fun AdScreen(
                 adListener = CustomAdListener(viewModel)
             )
         }
+    }
+}
+
+@Composable
+fun InstructionsText() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = stringResource(R.string.adscreen_instructions_message),
+            modifier = Modifier.padding(Dimens.PaddingMedium)
+        )
     }
 }
 

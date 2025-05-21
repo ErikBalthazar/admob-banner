@@ -3,6 +3,7 @@
     <string name="admob_adunitid">ca-app-pub-3940256099942544/6300978111</string>
 
     <!-- AdScreen -->
+    <string name="adscreen_instructions_message">Banner de anúncio será carregado no bottom da tela</string>
     <string name="adscreen_banner_loading_message">Carregando anúncio</string>
     <string name="adscreen_banner_network_error_message">Sem conexão com a internet. Tentando reconectar</string>
     <string name="adscreen_banner_unknown_error_message">Erro ao carregar anúncio</string>

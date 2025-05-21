@@ -37,6 +37,9 @@ fun BannerAdView(
         },
         update = { adView ->
             adView.loadAd(adRequest)
+        },
+        onRelease = { adView ->
+            adView.destroy()
         }
     )
 }
