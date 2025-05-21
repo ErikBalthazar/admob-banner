@@ -13,3 +13,4 @@ val Pink40 = Color(0xFF7D5260)
 val AdPlaceholderBorder = Color.Black
 val AdPlaceholderBackground = Color.LightGray
 val AdErrorBackground = Color(0xFFCD6464)
+val BoxBorder = Color.Black

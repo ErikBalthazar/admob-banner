@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -20,12 +21,15 @@ import androidx.compose.ui.Modifier
 import com.erikbalthazar.admobbanner.R
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.erikbalthazar.admobbanner.common.exception.NetworkException
 import com.erikbalthazar.admobbanner.data.model.BannerAdConfig
 import com.erikbalthazar.admobbanner.data.source.ads.CustomAdListener
 import com.erikbalthazar.admobbanner.ui.theme.AdErrorBackground
 import com.erikbalthazar.admobbanner.ui.theme.Dimens
 import com.erikbalthazar.admobbanner.ui.theme.AdPlaceholderBackground
 import com.erikbalthazar.admobbanner.ui.theme.AdPlaceholderBorder
+import com.erikbalthazar.admobbanner.ui.theme.BoxBorder
 import com.erikbalthazar.admobbanner.ui.view.composable.component.BannerAdView
 import com.erikbalthazar.admobbanner.ui.viewmodel.AdsViewModel
 import com.erikbalthazar.admobbanner.utils.AdEvent
@@ -51,6 +55,11 @@ fun AdScreen(
     val impressionMsg = stringResource(R.string.adscreen_banner_adevent_impression_message)
     val swipeMsg = stringResource(R.string.adscreen_banner_adevent_swipe_clicked_message)
 
+    val bannerAdConfig = BannerAdConfig(
+        adUnitId = stringResource(R.string.admob_adunitid),
+        adSize = AdSize.BANNER
+    )
+
     LaunchedEffect(Unit) {
         viewModel.loadBannerAd(null)
     }
@@ -62,9 +71,16 @@ fun AdScreen(
                     "AdEvent", loadedMsg
                 )
 
-                is AdEvent.FailedToLoad -> Log.e(
-                    "AdEvent", "$failedMsg ${adEvent.loadAdError.message}"
-                )
+                is AdEvent.FailedToLoad -> {
+                    viewModel.handleAdError(
+                        error = adEvent.loadAdError,
+                        adRequestData = null
+                    )
+                    Log.e(
+                        "AdEvent",
+                        "$failedMsg ${adEvent.loadAdError.message} - ${adEvent.loadAdError.code}"
+                    )
+                }
 
                 AdEvent.Opened -> Log.d(
                     "AdEvent", openedMsg
@@ -89,28 +105,47 @@ fun AdScreen(
         }
     }
 
+    DisposableEffect(LocalLifecycleOwner.current) {
+        onDispose {
+            viewModel.cancelNetworkCallback()
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .padding(Dimens.PaddingMedium),
         verticalArrangement = Arrangement.Bottom
     ) {
-        Banner(
-            adRequestState = adRequestState,
-            adListener = CustomAdListener(viewModel)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .border(
+                    width = Dimens.BorderWidth,
+                    color = BoxBorder
+                )
         )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(bannerAdConfig.adSize.getHeightInDp())
+        ) {
+            Banner(
+                bannerAdConfig = bannerAdConfig,
+                adRequestState = adRequestState,
+                adListener = CustomAdListener(viewModel)
+            )
+        }
     }
 }
 
 @Composable
 fun Banner(
+    bannerAdConfig: BannerAdConfig,
     adRequestState: Status<AdRequest?>,
     adListener: AdListener
 ) {
-    val bannerAdConfig = BannerAdConfig(
-        adUnitId = stringResource(R.string.admob_adunitid)
-    )
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -128,14 +163,23 @@ fun Banner(
                 )
             }
             is Status.Error -> {
-                AdError(adSize = bannerAdConfig.adSize)
+                var errorMessage = stringResource(R.string.adscreen_banner_unknown_error_message)
+                if (adRequestState.throwable is NetworkException) {
+                    errorMessage = stringResource(R.string.adscreen_banner_network_error_message)
+                }
+                AdError(
+                    adSize = bannerAdConfig.adSize,
+                    errorMessage = errorMessage
+                )
             }
         }
     }
 }
 
 @Composable
-fun AdPlaceholder(adSize: AdSize) {
+fun AdPlaceholder(
+    adSize: AdSize,
+) {
     val heightDp = adSize.getHeightInDp()
 
     Box(
@@ -151,7 +195,10 @@ fun AdPlaceholder(adSize: AdSize) {
 }
 
 @Composable
-fun AdError(adSize: AdSize) {
+fun AdError(
+    adSize: AdSize,
+    errorMessage: String
+) {
     val heightDp = adSize.getHeightInDp()
 
     Box(
@@ -161,6 +208,6 @@ fun AdError(adSize: AdSize) {
             .background(AdErrorBackground),
         contentAlignment = Alignment.Center
     ) {
-        Text(text = stringResource(R.string.adscreen_banner_error_message))
+        Text(text = errorMessage)
     }
 }

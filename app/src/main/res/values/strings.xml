@@ -4,7 +4,8 @@
 
     <!-- AdScreen -->
     <string name="adscreen_banner_loading_message">Carregando anúncio</string>
-    <string name="adscreen_banner_error_message">Erro ao carregar anúncio</string>
+    <string name="adscreen_banner_network_error_message">Sem conexão com a internet. Tentando reconectar</string>
+    <string name="adscreen_banner_unknown_error_message">Erro ao carregar anúncio</string>
     <string name="adscreen_banner_adevent_loaded_message">Anúncio carregado</string>
     <string name="adscreen_banner_adevent_failed_message">Erro ao carregar o anúncio: </string>
     <string name="adscreen_banner_adevent_opened_message">Anúncio aberto</string>
