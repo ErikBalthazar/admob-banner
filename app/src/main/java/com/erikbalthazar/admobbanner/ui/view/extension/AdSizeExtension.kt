@@ -1,4 +1,4 @@
-package com.erikbalthazar.admobbanner.utils
+package com.erikbalthazar.admobbanner.ui.view.extension
 
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp

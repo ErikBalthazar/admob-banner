@@ -36,15 +36,17 @@ import com.erikbalthazar.admobbanner.ui.theme.AdPlaceholderBorder
 import com.erikbalthazar.admobbanner.ui.theme.BoxBorder
 import com.erikbalthazar.admobbanner.ui.view.composable.component.BannerAdView
 import com.erikbalthazar.admobbanner.ui.viewmodel.AdsViewModel
-import com.erikbalthazar.admobbanner.utils.AdEvent
-import com.erikbalthazar.admobbanner.utils.Status
-import com.erikbalthazar.admobbanner.utils.getHeightInDp
+import com.erikbalthazar.admobbanner.data.model.AdEvent
+import com.erikbalthazar.admobbanner.common.Status
+import com.erikbalthazar.admobbanner.ui.view.extension.getHeightInDp
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import kotlinx.coroutines.flow.collectLatest
 import com.erikbalthazar.admobbanner.BuildConfig
 import com.erikbalthazar.admobbanner.common.crashlytics.AdCrashlytics
+import com.erikbalthazar.admobbanner.data.model.AdEventType
+import com.erikbalthazar.admobbanner.common.Logger
 
 @Composable
 fun AdScreen(
@@ -52,91 +54,23 @@ fun AdScreen(
     viewModel: AdsViewModel = hiltViewModel()
 ) {
     val adRequestState by viewModel.adRequestState.collectAsState()
-
     val context = LocalContext.current
     val adUnitId = BuildConfig.ADMOB_BANNER_AD_UNIT_ID
-    val loadedMsg = stringResource(R.string.adscreen_banner_adevent_loaded_message)
-    val failedMsg = stringResource(R.string.adscreen_banner_adevent_failed_message)
-    val openedMsg = stringResource(R.string.adscreen_banner_adevent_opened_message)
-    val clickedMsg = stringResource(R.string.adscreen_banner_adevent_clicked_message)
-    val closedMsg = stringResource(R.string.adscreen_banner_adevent_closed_message)
-    val impressionMsg = stringResource(R.string.adscreen_banner_adevent_impression_message)
-    val swipeMsg = stringResource(R.string.adscreen_banner_adevent_swipe_clicked_message)
-
     val bannerAdConfig = BannerAdConfig(
         adUnitId = adUnitId,
         adSize = AdSize.BANNER
     )
+    val eventMessages = rememberEventMessages()
 
     LaunchedEffect(Unit) {
         viewModel.loadBannerAd(null)
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.adEvents.collectLatest { adEvent ->
-            when (adEvent) {
-                AdEvent.Loaded -> {
-                    logAdEvent(
-                        context = context,
-                        eventTag = AnalyticsTags.AD_EVENT,
-                        message = loadedMsg
-                    )
-                }
-
-                is AdEvent.FailedToLoad -> {
-                    viewModel.handleAdError(
-                        error = adEvent.loadAdError,
-                        adRequestData = null
-                    )
-                    logAdEventCrash(
-                        eventTag = AnalyticsTags.AD_EVENT,
-                        logMessage = "$failedMsg ${adEvent.loadAdError.message}",
-                        crashlyticsMessage = adEvent.loadAdError.message
-                    )
-                }
-
-                AdEvent.Opened -> {
-                    logAdEvent(
-                        context = context,
-                        eventTag = AnalyticsTags.AD_EVENT,
-                        message = openedMsg
-                    )
-                }
-
-                AdEvent.Clicked -> {
-                    logAdEvent(
-                        context = context,
-                        eventTag = AnalyticsTags.AD_EVENT,
-                        message = clickedMsg
-                    )
-                }
-
-                AdEvent.Closed -> {
-                    logAdEvent(
-                        context = context,
-                        eventTag = AnalyticsTags.AD_EVENT,
-                        message = closedMsg
-                    )
-                }
-
-                AdEvent.Impression -> {
-                    logAdEvent(
-                        context = context,
-                        eventTag = AnalyticsTags.AD_EVENT,
-                        message = impressionMsg
-                    )
-                }
-
-                AdEvent.SwipeGestureClicked -> {
-                    logAdEvent(
-                        context = context,
-                        eventTag = AnalyticsTags.AD_EVENT,
-                        message = swipeMsg
-                    )
-                }
-            }
-        }
-    }
+    CollectAdEvents(
+        viewModel = viewModel,
+        context = context,
+        eventMessages = eventMessages
+    )
 
     DisposableEffect(LocalLifecycleOwner.current) {
         onDispose {
@@ -144,6 +78,64 @@ fun AdScreen(
         }
     }
 
+    AdScreenContent(
+        modifier = modifier,
+        bannerAdConfig = bannerAdConfig,
+        adRequestState = adRequestState,
+        adListener = CustomAdListener(viewModel),
+        onAdViewRelease = { viewModel.cancelNetworkCallback() }
+    )
+}
+
+@Composable
+private fun rememberEventMessages(): Map<AdEventType, String> {
+    return mapOf(
+        AdEventType.Loaded to stringResource(R.string.adscreen_banner_adevent_loaded_message),
+        AdEventType.Failed to stringResource(R.string.adscreen_banner_adevent_failed_message),
+        AdEventType.Opened to stringResource(R.string.adscreen_banner_adevent_opened_message),
+        AdEventType.Clicked to stringResource(R.string.adscreen_banner_adevent_clicked_message),
+        AdEventType.Closed to stringResource(R.string.adscreen_banner_adevent_closed_message),
+        AdEventType.Impression to stringResource(R.string.adscreen_banner_adevent_impression_message),
+        AdEventType.Swipe to stringResource(R.string.adscreen_banner_adevent_swipe_clicked_message)
+    )
+}
+
+@Composable
+private fun CollectAdEvents(
+    viewModel: AdsViewModel,
+    context: Context,
+    eventMessages: Map<AdEventType, String>
+) {
+    LaunchedEffect(Unit) {
+        viewModel.adEvents.collectLatest { adEvent ->
+            when (adEvent) {
+                AdEvent.Loaded -> logAdEvent(context, AnalyticsTags.AD_EVENT, eventMessages[adEvent.type].orEmpty())
+                is AdEvent.FailedToLoad -> {
+                    viewModel.handleAdError(adEvent.loadAdError, null)
+                    logAdEventCrash(
+                        eventTag = AnalyticsTags.AD_EVENT,
+                        logMessage = "${eventMessages[adEvent.type]} ${adEvent.loadAdError.message}",
+                        crashlyticsMessage = adEvent.loadAdError.message
+                    )
+                }
+                AdEvent.Opened -> logAdEvent(context, AnalyticsTags.AD_EVENT, eventMessages[adEvent.type].orEmpty())
+                AdEvent.Clicked -> logAdEvent(context, AnalyticsTags.AD_EVENT, eventMessages[adEvent.type].orEmpty())
+                AdEvent.Closed -> logAdEvent(context, AnalyticsTags.AD_EVENT, eventMessages[adEvent.type].orEmpty())
+                AdEvent.Impression -> logAdEvent(context, AnalyticsTags.AD_EVENT, eventMessages[adEvent.type].orEmpty())
+                AdEvent.SwipeGestureClicked -> logAdEvent(context, AnalyticsTags.AD_EVENT, eventMessages[adEvent.type].orEmpty())
+            }
+        }
+    }
+}
+
+@Composable
+private fun AdScreenContent(
+    modifier: Modifier = Modifier,
+    bannerAdConfig: BannerAdConfig,
+    adRequestState: Status<AdRequest?>,
+    adListener: AdListener,
+    onAdViewRelease: () -> Unit
+) {
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -169,17 +161,15 @@ fun AdScreen(
             Banner(
                 bannerAdConfig = bannerAdConfig,
                 adRequestState = adRequestState,
-                adListener = CustomAdListener(viewModel),
-                onAdViewRelease = {
-                    viewModel.cancelNetworkCallback()
-                }
+                adListener = adListener,
+                onAdViewRelease = onAdViewRelease
             )
         }
     }
 }
 
 @Composable
-fun InstructionsText() {
+private fun InstructionsText() {
     Box(
         modifier = Modifier
             .fillMaxWidth(),
@@ -193,7 +183,7 @@ fun InstructionsText() {
 }
 
 @Composable
-fun Banner(
+private fun Banner(
     bannerAdConfig: BannerAdConfig,
     adRequestState: Status<AdRequest?>,
     adListener: AdListener,
@@ -231,7 +221,7 @@ fun Banner(
 }
 
 @Composable
-fun AdPlaceholder(
+private fun AdPlaceholder(
     adSize: AdSize,
 ) {
     val heightDp = adSize.getHeightInDp()
@@ -249,7 +239,7 @@ fun AdPlaceholder(
 }
 
 @Composable
-fun AdError(
+private fun AdError(
     adSize: AdSize,
     errorMessage: String
 ) {
@@ -266,20 +256,20 @@ fun AdError(
     }
 }
 
-fun logAdEvent(
+private fun logAdEvent(
     context: Context,
     eventTag: String,
     message: String
 ) {
-    Log.d(eventTag, message)
+    Logger.d(eventTag, message)
     AdAnalytics.logEvent(context = context, eventTag = eventTag, data = message)
 }
 
-fun logAdEventCrash(
+private fun logAdEventCrash(
     eventTag: String,
     logMessage: String,
     crashlyticsMessage: String
 ) {
-    Log.e(eventTag, logMessage)
+    Logger.e(eventTag, logMessage)
     AdCrashlytics.log(message = crashlyticsMessage)
 }

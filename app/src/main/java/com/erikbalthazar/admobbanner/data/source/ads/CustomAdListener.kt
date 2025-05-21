@@ -1,7 +1,7 @@
 package com.erikbalthazar.admobbanner.data.source.ads
 
 import com.erikbalthazar.admobbanner.ui.viewmodel.AdsViewModel
-import com.erikbalthazar.admobbanner.utils.AdEvent
+import com.erikbalthazar.admobbanner.data.model.AdEvent
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.LoadAdError
 

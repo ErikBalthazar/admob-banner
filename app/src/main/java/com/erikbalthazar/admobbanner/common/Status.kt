@@ -1,4 +1,4 @@
-package com.erikbalthazar.admobbanner.utils
+package com.erikbalthazar.admobbanner.common
 
 /**
  * A sealed class representing the different states of an operation that can either be loading,

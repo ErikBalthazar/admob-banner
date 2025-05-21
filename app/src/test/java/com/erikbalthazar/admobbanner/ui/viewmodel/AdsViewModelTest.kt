@@ -5,8 +5,8 @@ import android.net.ConnectivityManager
 import com.erikbalthazar.admobbanner.common.exception.NetworkException
 import com.erikbalthazar.admobbanner.data.model.AdRequestData
 import com.erikbalthazar.admobbanner.data.source.ads.AdRequestFactory
-import com.erikbalthazar.admobbanner.utils.AdEvent
-import com.erikbalthazar.admobbanner.utils.Status
+import com.erikbalthazar.admobbanner.data.model.AdEvent
+import com.erikbalthazar.admobbanner.common.Status
 import com.erikbalthazar.admobbanner.utils.retryWhenNetworkAvailable
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.LoadAdError
