@@ -227,7 +227,7 @@ private fun Banner(
                     bannerAdConfig = bannerAdConfig,
                     adListener = adListener
                 )
-                if (currentAdEventType == null) {
+                if (currentAdEventType == null || currentAdEventType == AdEventType.Failed) {
                     AdPlaceholder(adSize = bannerAdConfig.adSize)
                 }
             }
