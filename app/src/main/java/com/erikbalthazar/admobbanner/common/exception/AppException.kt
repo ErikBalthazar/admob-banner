@@ -10,7 +10,10 @@ sealed class AppException : Exception()
 
 /**
  * Exception indicating a network-related error.
- *
- * This exception is thrown when an operation fails due to network issues.
  */
 class NetworkException : AppException()
+
+/**
+ * Exception indicating an unknown or unexpected error.
+ */
+class UnknownException : AppException()

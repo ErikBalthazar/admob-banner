@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.erikbalthazar.admobbanner.common.exception.NetworkException
+import com.erikbalthazar.admobbanner.common.exception.UnknownException
 import com.erikbalthazar.admobbanner.data.model.AdRequestData
 import com.erikbalthazar.admobbanner.data.source.ads.AdRequestFactory
 import com.erikbalthazar.admobbanner.utils.AdEvent
@@ -40,7 +41,7 @@ class AdsViewModel @Inject constructor(
     private val _adEvents = MutableSharedFlow<AdEvent>(replay = 0)
     val adEvents: SharedFlow<AdEvent> = _adEvents
 
-    private var networkCallback: ConnectivityManager.NetworkCallback? = null
+    internal var networkCallback: ConnectivityManager.NetworkCallback? = null
 
     /**
      * Called when the ViewModel is no longer used and will be destroyed.
@@ -116,6 +117,8 @@ class AdsViewModel @Inject constructor(
                     loadBannerAd(adRequestData)
                 }
             )
+        } else {
+            _adRequestState.value = Status.Error(UnknownException())
         }
     }
 
