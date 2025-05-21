@@ -1,3 +1,16 @@
 <resources>
     <string name="app_name">AdmobBanner</string>
+
+    <!-- AdScreen -->
+    <string name="adscreen_instructions_message">Banner de anúncio será carregado no bottom da tela</string>
+    <string name="adscreen_banner_loading_message">Carregando anúncio</string>
+    <string name="adscreen_banner_network_error_message">Sem conexão com a internet. Tentando reconectar</string>
+    <string name="adscreen_banner_unknown_error_message">Erro ao carregar anúncio</string>
+    <string name="adscreen_banner_adevent_loaded_message">Anúncio carregado</string>
+    <string name="adscreen_banner_adevent_failed_message">Erro ao carregar o anúncio: </string>
+    <string name="adscreen_banner_adevent_opened_message">Anúncio aberto</string>
+    <string name="adscreen_banner_adevent_clicked_message">Anúncio clicado</string>
+    <string name="adscreen_banner_adevent_closed_message">Anúncio fechado</string>
+    <string name="adscreen_banner_adevent_impression_message">Impressão do anúncio</string>
+    <string name="adscreen_banner_adevent_swipe_clicked_message">Clique de gesto de deslizar</string>
 </resources>

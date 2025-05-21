@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -7,6 +9,21 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
 }
+
+val localProperties = Properties()
+file("local.properties").inputStream().use {
+    localProperties.load(it)
+}
+
+val admobBannerAdUnitIdDebug: String =
+    localProperties.getProperty("ADMOB_BANNER_AD_UNIT_ID_DEBUG") ?: ""
+val admobBannerAdUnitIdRelease: String =
+    localProperties.getProperty("ADMOB_BANNER_AD_UNIT_ID_RELEASE") ?: ""
+
+val admobAppIdDebug: String =
+    localProperties.getProperty("ADMOB_APP_ID_DEBUG") ?: ""
+val admobAppIdRelease: String =
+    localProperties.getProperty("ADMOB_APP_ID_RELEASE") ?: ""
 
 android {
     namespace = "com.erikbalthazar.admobbanner"
@@ -20,15 +37,30 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders["ADMOB_APP_ID"] = admobAppIdDebug
     }
 
     buildTypes {
+        debug {
+            buildConfigField(
+                "String",
+                "ADMOB_BANNER_AD_UNIT_ID",
+                "\"$admobBannerAdUnitIdDebug\""
+            )
+            manifestPlaceholders["ADMOB_APP_ID"] = admobAppIdDebug
+        }
         release {
+            buildConfigField(
+                "String",
+                "ADMOB_BANNER_AD_UNIT_ID",
+                "\"$admobBannerAdUnitIdRelease\""
+            )
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            manifestPlaceholders["ADMOB_APP_ID"] = admobAppIdRelease
         }
     }
 
@@ -43,6 +75,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     lint {
@@ -65,8 +98,13 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.hilt)
+    implementation(libs.firebase.crashlytics.ktx)
     ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.compose)
+    implementation(libs.play.services.ads)
     testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
